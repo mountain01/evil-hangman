@@ -13,6 +13,11 @@ public class Hangman implements EvilHangmanGame {
 
     private Set<String> words;
     private int length;
+    private String key;
+
+    public void setWords(Set<String> words) {
+        this.words = words;
+    }
 
     /**
      * Starts a new game of evil hangman using words from <code>dictionary</code>
@@ -25,6 +30,13 @@ public class Hangman implements EvilHangmanGame {
     public void startGame(File dictionary, int wordLength) {
        words =  addWords(dictionary, wordLength);
        length = wordLength;
+       StringBuilder newKey = new StringBuilder();
+       int i = 0;
+       while(i < length){
+           newKey.append('_');
+           i++;
+       }
+        key = newKey.toString();
     }
 
     private Set<String> addWords(File dictionary, int wordLength){
@@ -56,24 +68,113 @@ public class Hangman implements EvilHangmanGame {
     @Override
     public Set<String> makeGuess(char guess) throws GuessAlreadyMadeException {
         Map<String,Set<String>> group = new HashMap<String, Set<String>>();
-        StringBuilder key = new StringBuilder();
-        int i = 0;
-        while(i < length){
-            key.append('_');
-            i++;
-        }
-        for(i = 0;i<length;i++){
-            char[] keyList = key.toString().toCharArray();
-            keyList[i] = guess;
-            String newKey = keyList.toString();
-            Set<String> input = new HashSet<String>();
-            for(String word:words){
-                if(word.charAt(i) == guess){
-                    input.add(word);
-                }
+        for(String word:words){
+            String key = makeKey(word,guess);
+            if(!group.containsKey(key)){
+                group.put(key,new HashSet<String>());
             }
-            group.put(newKey,input);
+            group.get(key).add(word);
+        }
+        return makeSingleSet(group,guess);
+    }
+
+    private Set<String> makeSingleSet(Map<String,Set<String>> subsets,char guess){
+        // get largest sets
+        subsets = getLargestSets(subsets);
+        if(subsets.size() == 1){
+            return extractSet(subsets);
+        }
+        // if more than one of same size, return one with key with no guessed letters in it.
+        subsets = noGuessedLetters(subsets,guess);
+        if(subsets.size() == 1){
+            return extractSet(subsets);
+        }
+        // get right most guess;
+        subsets = getRightmost(subsets,guess,length);
+        if(subsets.size() == 1){
+            return extractSet(subsets);
+        }
+
+       return null;
+    }
+
+    private Map<String,Set<String>> getRightmost(Map<String,Set<String>> subsets,char guess,int myIndex){
+        Map<String,Set<String>> tempMap = new HashMap<String, Set<String>>();
+        int smallestIndex = 0;
+        for(String key:subsets.keySet()){
+            int index = indexOf(key,guess,myIndex);
+            smallestIndex = index > smallestIndex ? index : smallestIndex;
+        }
+        for(String key:subsets.keySet()){
+            int index = indexOf(key,guess,myIndex);
+            if(index == smallestIndex){
+                tempMap.put(key,subsets.get(key));
+            }
+        }
+        if(tempMap.size() > 1){
+            tempMap = getRightmost(tempMap,guess,smallestIndex);
+        }
+        return tempMap;
+    }
+
+    private Map<String,Set<String>> noGuessedLetters(Map<String,Set<String>> subsets,char guess){
+        Map<String,Set<String>> prunedMap = new HashMap<String, Set<String>>();
+        Map<String,Set<String>> prunedMap2 = new HashMap<String, Set<String>>();
+        for(String key:subsets.keySet()){
+            Set<String> set = subsets.get(key);
+            if(indexOf(key,guess,length) == -1){
+                prunedMap.put(key,set);
+            }
+            else{
+                prunedMap2.put(key,set);
+            }
+        }
+        return prunedMap.size() > 0 ? prunedMap : prunedMap2;
+    }
+
+    private int indexOf(String inString,  char inChar, int index){
+        for(int i = index-1;i>=0;i--){
+            if(inString.charAt(i) == inChar){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private Set<String> extractSet(Map<String,Set<String>> subsets){
+        for(String newKey:subsets.keySet()){
+            key = newKey;
+            return subsets.get(newKey);
         }
         return null;
+    }
+
+    private Map<String,Set<String>> getLargestSets(Map<String,Set<String>> subsets){
+        int largest = 0;
+        for(Set<String> set:subsets.values()){
+            largest = set.size() > largest ? set.size() : largest;
+        }
+
+        Map<String,Set<String>> prunedMap = new HashMap<String, Set<String>>();
+        for(String key:subsets.keySet()){
+            Set<String> set = subsets.get(key);
+            if(set.size() == largest){
+                prunedMap.put(key,set);
+            }
+        }
+        return prunedMap;
+    }
+
+    private String makeKey(String word, char guess){
+        StringBuilder newKey = new StringBuilder();
+        for(int i = 0; i < word.length();i++){
+            char c = word.charAt(i);
+            if(c == guess){
+                newKey.append(c);
+            } else {
+                newKey.append(key.charAt(i));
+            }
+        }
+        return newKey.toString();
     }
 }
