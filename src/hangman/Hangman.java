@@ -1,17 +1,18 @@
 package hangman;
 
+
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
+import java.lang.StringBuilder;
 
 /**
  * Created by Matt on 9/16/2014.
  */
 public class Hangman implements EvilHangmanGame {
 
-    Set<String> words;
+    private Set<String> words;
+    private int length;
 
     /**
      * Starts a new game of evil hangman using words from <code>dictionary</code>
@@ -23,6 +24,7 @@ public class Hangman implements EvilHangmanGame {
     @Override
     public void startGame(File dictionary, int wordLength) {
        words =  addWords(dictionary, wordLength);
+       length = wordLength;
     }
 
     private Set<String> addWords(File dictionary, int wordLength){
@@ -53,6 +55,25 @@ public class Hangman implements EvilHangmanGame {
      */
     @Override
     public Set<String> makeGuess(char guess) throws GuessAlreadyMadeException {
+        Map<String,Set<String>> group = new HashMap<String, Set<String>>();
+        StringBuilder key = new StringBuilder();
+        int i = 0;
+        while(i < length){
+            key.append('_');
+            i++;
+        }
+        for(i = 0;i<length;i++){
+            char[] keyList = key.toString().toCharArray();
+            keyList[i] = guess;
+            String newKey = keyList.toString();
+            Set<String> input = new HashSet<String>();
+            for(String word:words){
+                if(word.charAt(i) == guess){
+                    input.add(word);
+                }
+            }
+            group.put(newKey,input);
+        }
         return null;
     }
 }
