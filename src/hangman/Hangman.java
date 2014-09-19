@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.lang.StringBuilder;
+import java.util.stream.Collector;
 
 /**
  * Created by Matt on 9/16/2014.
@@ -14,9 +15,22 @@ public class Hangman implements EvilHangmanGame {
     private Set<String> words;
     private int length;
     private String key;
+    Set<Character> usedLetters = new TreeSet<Character>();
 
-    public void setWords(Set<String> words) {
-        this.words = words;
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getUsedLetters(){
+        StringBuilder result = new StringBuilder();
+        for(char c:usedLetters){
+            result.append(c).append(" ");
+        }
+        return result == null ? "" :result.toString();
     }
 
     /**
@@ -33,7 +47,7 @@ public class Hangman implements EvilHangmanGame {
        StringBuilder newKey = new StringBuilder();
        int i = 0;
        while(i < length){
-           newKey.append('_');
+           newKey.append('-');
            i++;
        }
         key = newKey.toString();
@@ -67,6 +81,13 @@ public class Hangman implements EvilHangmanGame {
      */
     @Override
     public Set<String> makeGuess(char guess) throws GuessAlreadyMadeException {
+        guess = Character.toLowerCase(guess);
+        if(usedLetters.contains(guess)){
+            throw new GuessAlreadyMadeException();
+        }
+        else {
+            usedLetters.add(guess);
+        }
         Map<String,Set<String>> group = new HashMap<String, Set<String>>();
         for(String word:words){
             String key = makeKey(word,guess);
