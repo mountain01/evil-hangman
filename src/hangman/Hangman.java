@@ -75,78 +75,30 @@ public class Hangman implements EvilHangmanGame {
             }
             group.get(key).add(word);
         }
-        return makeSingleSet(group,guess);
+        // limit by size
+        group = getLargestSets(group);
+        return findPrioritySet(group, guess);
     }
 
-    private Set<String> makeSingleSet(Map<String,Set<String>> subsets,char guess){
-        // get largest sets
-        subsets = getLargestSets(subsets);
-        if(subsets.size() == 1){
-            return extractSet(subsets);
-        }
-        // if more than one of same size, return one with key with no guessed letters in it.
-        subsets = noGuessedLetters(subsets,guess);
-        if(subsets.size() == 1){
-            return extractSet(subsets);
-        }
-        // get right most guess;
-        subsets = getRightmost(subsets,guess,length);
-        if(subsets.size() == 1){
-            return extractSet(subsets);
-        }
-
-       return null;
-    }
-
-    private Map<String,Set<String>> getRightmost(Map<String,Set<String>> subsets,char guess,int myIndex){
-        Map<String,Set<String>> tempMap = new HashMap<String, Set<String>>();
-        int smallestIndex = 0;
-        for(String key:subsets.keySet()){
-            int index = indexOf(key,guess,myIndex);
-            smallestIndex = index > smallestIndex ? index : smallestIndex;
-        }
-        for(String key:subsets.keySet()){
-            int index = indexOf(key,guess,myIndex);
-            if(index == smallestIndex){
-                tempMap.put(key,subsets.get(key));
+    private Set<String> findPrioritySet(Map<String,Set<String>> input,char guess){
+        int minScore = Integer.MAX_VALUE;
+        for(String temKey:input.keySet()){
+            int weight = 1;
+            int count = 0;
+            int weightedScore = 0;
+            for(int i = temKey.length()-1;i>=0;i--){
+                if(temKey.charAt(i) == guess){
+                    weightedScore+=++count*weight;
+                }
+                weight*=2;
+            }
+            if(weightedScore < minScore){
+                key = temKey;
+                minScore = weightedScore;
             }
         }
-        if(tempMap.size() > 1){
-            tempMap = getRightmost(tempMap,guess,smallestIndex);
-        }
-        return tempMap;
-    }
-
-    private Map<String,Set<String>> noGuessedLetters(Map<String,Set<String>> subsets,char guess){
-        Map<String,Set<String>> prunedMap = new HashMap<String, Set<String>>();
-        Map<String,Set<String>> prunedMap2 = new HashMap<String, Set<String>>();
-        for(String key:subsets.keySet()){
-            Set<String> set = subsets.get(key);
-            if(indexOf(key,guess,length) == -1){
-                prunedMap.put(key,set);
-            }
-            else{
-                prunedMap2.put(key,set);
-            }
-        }
-        return prunedMap.size() > 0 ? prunedMap : prunedMap2;
-    }
-
-    private int indexOf(String inString,  char inChar, int index){
-        for(int i = index-1;i>=0;i--){
-            if(inString.charAt(i) == inChar){
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private Set<String> extractSet(Map<String,Set<String>> subsets){
-        for(String newKey:subsets.keySet()){
-            key = newKey;
-            return subsets.get(newKey);
-        }
-        return null;
+        words = input.get(key);
+        return words;
     }
 
     private Map<String,Set<String>> getLargestSets(Map<String,Set<String>> subsets){

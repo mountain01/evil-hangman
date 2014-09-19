@@ -1,7 +1,6 @@
 package hangman;
 
 import java.io.File;
-import java.util.Set;
 
 /**
  * Created by Matt on 9/18/2014.
